@@ -5,25 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        form input {
-            display: block;
-            margin: 5px 0;
+        fieldset:has(form[name=addBookForm]) {
+            width: min-content;
+        }
+        [name=addBookForm] {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two equal columns */
+            gap: 10px; /* Optional gap between items */
+            justify-self: center;
+
+            & label {
+                display: contents;
+                & span {
+                    justify-self: end;
+                    &::after {
+                        content: ":";
+                    }
+                }
+            }
+
+            > div:has(> input[type=submit]) {
+                grid-column: 1 / -1;
+                justify-self: center;
+            }
         }
         ul.book-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            /* display: flex; */
+            /* justify-content: space-between; */
+            /* align-items: center; */
+            display: grid;
+            grid-template-columns: 8fr 1fr;
+        }
+        form[data-mode="details"] input:not(button) {
+            /* border-color: transparent;
+            background-color: transparent;
+            resize: none;
+            outline: none; */
+            /* padding: 0; */
+            /* margin: 0; */
+            /* font-family: inherit; */
+            /* font-size: inherit; */
+        }
+        .highlight:hover {
+            background-color: pink;
+            cursor: pointer;
         }
     </style>
     <script>
 
         listBooks()
 
+        function handleBookSection(e) {
+            const mode = document.querySelector("form[data-mode]").getAttribute("data-mode");
+            if (mode === "add") {
+                addBook(e);
+            } else if (mode === "edit") {
+                updateBook(e);
+            }
+            listBooks();
+        }
+
         function addBook(e) {
+            const data = getFormData(e);
+            delete data._id;
             fetch("/book", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(getFormData(e))
+                body: JSON.stringify(data)
             }).then(() => {
                 listBooks()
                 e.reset();
@@ -44,15 +92,38 @@
             })
         }
         
-        function editBook(e) {
-            const form = document.querySelector("form[name=updateBookForm]");
-            form.title.value = e.title;
-            form.author.value = e.author;
-            form.extra.value = e.extra;
-            form._id.value = e._id;
+        function editBook(data) {
+            const form = document.querySelector("form[name=addBookForm]");
+            form.setAttribute("data-mode", "edit");
+            setApperance();
+            Object.entries(data).forEach(([kk, vv]) => {
+                if (form[kk]) {
+                    form[kk].value = vv;
+                }
+            })
+        }
+
+        function setApperance() {
+            const fs = document.querySelector("fieldset:has(form[name=addBookForm])");
+            const mode = fs.querySelector("form").getAttribute("data-mode");
+            if (mode === "add") {
+                fs.disabled = false;
+                fs.querySelector("legend").innerHTML = "Add Book";
+                fs.querySelector("input[type=submit]").value = "Add Book";
+                fs.querySelector("input[type=submit]").style.visibility = "visible";
+            } else if (mode === "edit") {
+                fs.disabled = false;
+                fs.querySelector("legend").innerHTML = "Update Book";
+                fs.querySelector("input[type=submit]").value = "Update Book";
+                fs.querySelector("input[type=submit]").style.visibility = "visible";
+            } else if (mode === "details") {
+                fs.disabled = true;
+                fs.querySelector("legend").innerHTML = "Book Details";
+                fs.querySelector("input[type=submit]").style.visibility = "hidden";
+            }
         }
         
-        function moreBook(id) {
+        function bookDetails(id) {
             fetch(`/book/${id}`, {
                 method: "GET",
                 headers: {"Content-Type": "application/json"}
@@ -61,11 +132,10 @@
             .then((data) => {
                 delete data._id;
                 delete data.__v;
-                const detailsHolder = document.querySelector(".book-details");
-                detailsHolder.innerHTML = "";
-                Object.entries(data).forEach(([kk, vv]) => {
-                    detailsHolder.insertAdjacentHTML("beforeend", `<li>${kk} - ${vv}</li>`);
-                })
+                const form = document.querySelector("form[name=addBookForm]");
+                form.setAttribute("data-mode", "details");
+                Object.entries(data).forEach(([kk, vv]) => form[kk].value = vv);
+                setApperance();
             })
         }
         
@@ -91,11 +161,11 @@
                     const editparam = JSON.stringify(book).replace(/"/g, `'`);
                     const ff = `${editparam}`;
                     const linode = document.querySelector("template").content.cloneNode(true);
+                    linode.querySelector(".highlight > section:first-child").onclick = () => { bookDetails(book._id) };
                     linode.querySelector(".tmpl-title").innerHTML = book.title;
                     linode.querySelector(".tmpl-author").innerHTML = book.author;
                     linode.querySelector(".tmpl-delete").onclick = () => { deleteBook(book._id) }
                     linode.querySelector(".tmpl-edit").onclick = () => { editBook(book) }
-                    linode.querySelector(".tmpl-extra").onclick = () => { moreBook(book._id) }
                     holder.appendChild(linode);
                 })
             })
@@ -115,29 +185,15 @@
     
     <fieldset>
         <legend>Add book</legend>
-        <form name="addBookForm" onsubmit="event.preventDefault(); addBook(this);">
-            <input type="text" name="title" placeholder="title" />
-            <input type="text" name="author" placeholder="author" />
-            <input type="text" name="extra" placeholder="extra" />
-            <input type="submit" name="submit" value="Add Book" />
-        </form>
-    </fieldset>
-    
-    <fieldset>
-        <legend>Update book</legend>
-        <form name="updateBookForm" onsubmit="event.preventDefault(); updateBook(this);">
-            <input type="text" name="title" placeholder="title" />
-            <input type="text" name="author" placeholder="author" />
-            <input type="text" name="extra" placeholder="extra" />
+        <form name="addBookForm" data-mode="add" onsubmit="event.preventDefault(); handleBookSection(this);">
+            <label><span>Title</span><input type="text" name="title" /></label>
+            <label><span>Author</span><input type="text" name="author" /></label>
+            <label><span>Extra</span><input type="text" name="extra" /></label>
             <input type="hidden" name="_id" />
-            <input type="submit" name="submit" value="Update Book" />
+            <div><input type="submit" name="submit" value="Add Book" /></div>
         </form>
     </fieldset>
     
-    <fieldset>
-        <legend>Book Details</legend>
-        <section class="book-details"></section>
-    </fieldset>
     
     <fieldset>
         <legend>Book List</legend>
@@ -145,12 +201,14 @@
     </fieldset>
 
     <template>
-        <li>
-            <section> <span class="tmpl-title">${book.title}</span> &mdash; <span class="tmpl-author">${book.author}</span></section>
+        <li class="highlight">
             <section>
-                <button class="tmpl-extra">DETAILS</button>
-                <button class="tmpl-edit">EDIT</button>
-                <button class="tmpl-delete">DELETE</button>
+                <span class="tmpl-title">${book.title}</span> &mdash; 
+                <span class="tmpl-author">${book.author}</span>
+            </section>
+            <section>
+                <button class="tmpl-edit">&#9998;</button>
+                <button class="tmpl-delete">&#128465;</button>
             </section>
         </li>
     </template>
