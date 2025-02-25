@@ -29,12 +29,16 @@
                 justify-self: center;
             }
         }
-        ul.book-list li {
-            /* display: flex; */
-            /* justify-content: space-between; */
-            /* align-items: center; */
-            display: grid;
-            grid-template-columns: 8fr 1fr;
+        ul.book-list {
+            padding: 0;
+            margin: 0;
+            & li {
+                /* display: flex; */
+                /* justify-content: space-between; */
+                /* align-items: center; */
+                display: grid;
+                grid-template-columns: 8fr 1fr;
+            }
         }
         form[data-mode="details"] input:not(button) {
             /* border-color: transparent;
@@ -63,8 +67,6 @@
                 const holder = document.querySelector(".book-list");
                 holder.innerHTML = "";
                 data.forEach((book) => {
-                    const editparam = JSON.stringify(book).replace(/"/g, `'`);
-                    const ff = `${editparam}`;
                     const linode = document.querySelector("template").content.cloneNode(true);
                     linode.querySelector(".highlight > section:first-child").onclick = () => { bookDetails(book._id) };
                     linode.querySelector(".tmpl-title").innerHTML = book.title;
@@ -113,6 +115,7 @@
                 delete data._id;
                 delete data.__v;
                 const form = document.querySelector("form[name=addBookForm]");
+                form.reset();
                 form.setAttribute("data-mode", "details");
                 Object.entries(data).forEach(([kk, vv]) => form[kk].value = vv);
                 setApperance();
@@ -142,6 +145,7 @@
 
         function editBook(data) {
             const form = document.querySelector("form[name=addBookForm]");
+            form.reset();
             form.setAttribute("data-mode", "edit");
             setApperance();
             Object.entries(data).forEach(([kk, vv]) => {
@@ -189,6 +193,10 @@
             <label><span>Title</span><input type="text" name="title" /></label>
             <label><span>Author</span><input type="text" name="author" /></label>
             <label><span>Extra</span><input type="text" name="extra" /></label>
+            <label><span>Phone</span><input type="text" name="phone" /></label>
+            <label><span>Nominee</span><input type="text" name="nominee" /></label>
+            <label><span>Address</span><input type="text" name="address" /></label>
+            <label><span>Age</span><input type="text" name="age" /></label>
             <input type="hidden" name="_id" />
             <div><input type="submit" name="submit" value="Add Book" /></div>
         </form>
