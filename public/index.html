@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 88%;
+        }
         fieldset:has(form[name=addBookForm]) {
             width: min-content;
         }
@@ -53,6 +57,24 @@
         .highlight:hover {
             background-color: pink;
             cursor: pointer;
+        }
+        .floating-close {
+            display: none;
+            justify-self: end;
+            border-radius: 100%;
+            aspect-ratio: 1;
+            border: 1px solid lightgray;
+            position: relative;
+            top: -15px;
+            right: -11px;
+            width: 20px;
+            padding: 0;
+            margin: -11px;
+            cursor: pointer;
+            background-color: #999;
+            color: white;
+            text-align: center;
+            align-content: center;
         }
     </style>
     <script>
@@ -112,12 +134,14 @@
             })
             .then((raw) => raw.json())
             .then((data) => {
-                delete data._id;
-                delete data.__v;
                 const form = document.querySelector("form[name=addBookForm]");
                 form.reset();
                 form.setAttribute("data-mode", "details");
-                Object.entries(data).forEach(([kk, vv]) => form[kk].value = vv);
+                Object.entries(data).forEach(([kk, vv]) => {
+                    if (form[kk]) {
+                        form[kk].value = vv
+                    }
+                });
                 setApperance();
             })
         }
@@ -132,6 +156,15 @@
         }
         
         listBooks()
+
+        function revertBook() {
+            const fs = document.querySelector("fieldset:has(form[name=addBookForm])");
+            fs.disabled = false;
+            const form = document.querySelector("form[name=addBookForm]");
+            form.reset();
+            form.setAttribute("data-mode", "add");
+            setApperance();
+        }
 
         function handleBookSection(e) {
             const mode = document.querySelector("form[data-mode]").getAttribute("data-mode");
@@ -163,15 +196,18 @@
                 fs.querySelector("legend").innerHTML = "Add Book";
                 fs.querySelector("input[type=submit]").value = "Add Book";
                 fs.querySelector("input[type=submit]").style.visibility = "visible";
+                fs.querySelector(".floating-close").style.display = "none";
             } else if (mode === "edit") {
                 fs.disabled = false;
                 fs.querySelector("legend").innerHTML = "Update Book";
                 fs.querySelector("input[type=submit]").value = "Update Book";
                 fs.querySelector("input[type=submit]").style.visibility = "visible";
+                fs.querySelector(".floating-close").style.display = "block";
             } else if (mode === "details") {
                 fs.disabled = true;
                 fs.querySelector("legend").innerHTML = "Book Details";
                 fs.querySelector("input[type=submit]").style.visibility = "hidden";
+                fs.querySelector(".floating-close").style.display = "block";
             }
         }
         
@@ -188,7 +224,8 @@
     
     
     <fieldset>
-        <legend>Add book</legend>
+        <legend>Add Details</legend>
+        <div class="floating-close" onclick="revertBook()">&cross;</div>
         <form name="addBookForm" data-mode="add" onsubmit="event.preventDefault(); handleBookSection(this);">
             <label><span>Title</span><input type="text" name="title" /></label>
             <label><span>Author</span><input type="text" name="author" /></label>
@@ -204,7 +241,7 @@
     
     
     <fieldset>
-        <legend>Book List</legend>
+        <legend>List</legend>
         <ul class="book-list"></ul>
     </fieldset>
 
