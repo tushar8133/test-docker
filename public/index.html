@@ -53,16 +53,27 @@
     </style>
     <script>
 
-        listBooks()
-
-        function handleBookSection(e) {
-            const mode = document.querySelector("form[data-mode]").getAttribute("data-mode");
-            if (mode === "add") {
-                addBook(e);
-            } else if (mode === "edit") {
-                updateBook(e);
-            }
-            listBooks();
+        function listBooks(e) {
+            fetch("/books", {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then((raw) => raw.json())
+            .then((data) => {
+                const holder = document.querySelector(".book-list");
+                holder.innerHTML = "";
+                data.forEach((book) => {
+                    const editparam = JSON.stringify(book).replace(/"/g, `'`);
+                    const ff = `${editparam}`;
+                    const linode = document.querySelector("template").content.cloneNode(true);
+                    linode.querySelector(".highlight > section:first-child").onclick = () => { bookDetails(book._id) };
+                    linode.querySelector(".tmpl-title").innerHTML = book.title;
+                    linode.querySelector(".tmpl-author").innerHTML = book.author;
+                    linode.querySelector(".tmpl-delete").onclick = () => { deleteBook(book._id) }
+                    linode.querySelector(".tmpl-edit").onclick = () => { editBook(book) }
+                    holder.appendChild(linode);
+                })
+            })
         }
 
         function addBook(e) {
@@ -91,7 +102,44 @@
                 e.reset();
             })
         }
+
+        function bookDetails(id) {
+            fetch(`/book/${id}`, {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then((raw) => raw.json())
+            .then((data) => {
+                delete data._id;
+                delete data.__v;
+                const form = document.querySelector("form[name=addBookForm]");
+                form.setAttribute("data-mode", "details");
+                Object.entries(data).forEach(([kk, vv]) => form[kk].value = vv);
+                setApperance();
+            })
+        }
         
+        function deleteBook(id) {
+            fetch(`/book/${id}`, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"}
+            }).then(() => {
+                listBooks()
+            })
+        }
+        
+        listBooks()
+
+        function handleBookSection(e) {
+            const mode = document.querySelector("form[data-mode]").getAttribute("data-mode");
+            if (mode === "add") {
+                addBook(e);
+            } else if (mode === "edit") {
+                updateBook(e);
+            }
+            listBooks();
+        }
+
         function editBook(data) {
             const form = document.querySelector("form[name=addBookForm]");
             form.setAttribute("data-mode", "edit");
@@ -123,54 +171,6 @@
             }
         }
         
-        function bookDetails(id) {
-            fetch(`/book/${id}`, {
-                method: "GET",
-                headers: {"Content-Type": "application/json"}
-            })
-            .then((raw) => raw.json())
-            .then((data) => {
-                delete data._id;
-                delete data.__v;
-                const form = document.querySelector("form[name=addBookForm]");
-                form.setAttribute("data-mode", "details");
-                Object.entries(data).forEach(([kk, vv]) => form[kk].value = vv);
-                setApperance();
-            })
-        }
-        
-        function deleteBook(id) {
-            fetch(`/book/${id}`, {
-                method: "DELETE",
-                headers: {"Content-Type": "application/json"}
-            }).then(() => {
-                listBooks()
-            })
-        }
-        
-        function listBooks(e) {
-            fetch("/books", {
-                method: "GET",
-                headers: {"Content-Type": "application/json"}
-            })
-            .then((raw) => raw.json())
-            .then((data) => {
-                const holder = document.querySelector(".book-list");
-                holder.innerHTML = "";
-                data.forEach((book) => {
-                    const editparam = JSON.stringify(book).replace(/"/g, `'`);
-                    const ff = `${editparam}`;
-                    const linode = document.querySelector("template").content.cloneNode(true);
-                    linode.querySelector(".highlight > section:first-child").onclick = () => { bookDetails(book._id) };
-                    linode.querySelector(".tmpl-title").innerHTML = book.title;
-                    linode.querySelector(".tmpl-author").innerHTML = book.author;
-                    linode.querySelector(".tmpl-delete").onclick = () => { deleteBook(book._id) }
-                    linode.querySelector(".tmpl-edit").onclick = () => { editBook(book) }
-                    holder.appendChild(linode);
-                })
-            })
-        }
-
         function getFormData(form) {
             const fData = new FormData(form);
             const fromEntries1 = Array.from(fData);
