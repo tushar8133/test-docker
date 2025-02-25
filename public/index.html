@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        form input {
+            display: block;
+            margin: 5px 0;
+        }
+        ul.book-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+    <script>
+
+        listBooks()
+
+        function addBook(e) {
+            fetch("/book", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(getFormData(e))
+            }).then(() => {
+                listBooks()
+                e.reset();
+            })
+        }
+        
+        function updateBook(e) {
+            const data = getFormData(e);
+            const id = data._id;
+            delete data._id;
+            fetch(`/book/${id}`, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(() => {
+                listBooks()
+                e.reset();
+            })
+        }
+        
+        function editBook(e) {
+            const form = document.querySelector("form[name=updateBookForm]");
+            form.title.value = e.title;
+            form.author.value = e.author;
+            form.extra.value = e.extra;
+            form._id.value = e._id;
+        }
+        
+        function moreBook(id) {
+            fetch(`/book/${id}`, {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then((raw) => raw.json())
+            .then((data) => {
+                delete data._id;
+                delete data.__v;
+                const detailsHolder = document.querySelector(".book-details");
+                detailsHolder.innerHTML = "";
+                Object.entries(data).forEach(([kk, vv]) => {
+                    detailsHolder.insertAdjacentHTML("beforeend", `<li>${kk} - ${vv}</li>`);
+                })
+            })
+        }
+        
+        function deleteBook(id) {
+            fetch(`/book/${id}`, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"}
+            }).then(() => {
+                listBooks()
+            })
+        }
+        
+        function listBooks(e) {
+            fetch("/books", {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then((raw) => raw.json())
+            .then((data) => {
+                const holder = document.querySelector(".book-list");
+                holder.innerHTML = "";
+                data.forEach((book) => {
+                    const editparam = JSON.stringify(book).replace(/"/g, `'`);
+                    const ff = `${editparam}`;
+                    const linode = document.querySelector("template").content.cloneNode(true);
+                    linode.querySelector(".tmpl-title").innerHTML = book.title;
+                    linode.querySelector(".tmpl-author").innerHTML = book.author;
+                    linode.querySelector(".tmpl-delete").onclick = () => { deleteBook(book._id) }
+                    linode.querySelector(".tmpl-edit").onclick = () => { editBook(book) }
+                    linode.querySelector(".tmpl-extra").onclick = () => { moreBook(book._id) }
+                    holder.appendChild(linode);
+                })
+            })
+        }
+
+        function getFormData(form) {
+            const fData = new FormData(form);
+            const fromEntries1 = Array.from(fData);
+            const formObject = Object.fromEntries(fromEntries1);
+            return formObject;
+        }
+
+    </script>
+</head>
+<body>
+    
+    
+    <fieldset>
+        <legend>Add book</legend>
+        <form name="addBookForm" onsubmit="event.preventDefault(); addBook(this);">
+            <input type="text" name="title" placeholder="title" />
+            <input type="text" name="author" placeholder="author" />
+            <input type="text" name="extra" placeholder="extra" />
+            <input type="submit" name="submit" value="Add Book" />
+        </form>
+    </fieldset>
+    
+    <fieldset>
+        <legend>Update book</legend>
+        <form name="updateBookForm" onsubmit="event.preventDefault(); updateBook(this);">
+            <input type="text" name="title" placeholder="title" />
+            <input type="text" name="author" placeholder="author" />
+            <input type="text" name="extra" placeholder="extra" />
+            <input type="hidden" name="_id" />
+            <input type="submit" name="submit" value="Update Book" />
+        </form>
+    </fieldset>
+    
+    <fieldset>
+        <legend>Book Details</legend>
+        <section class="book-details"></section>
+    </fieldset>
+    
+    <fieldset>
+        <legend>Book List</legend>
+        <ul class="book-list"></ul>
+    </fieldset>
+
+    <template>
+        <li>
+            <section> <span class="tmpl-title">${book.title}</span> &mdash; <span class="tmpl-author">${book.author}</span></section>
+            <section>
+                <button class="tmpl-extra">DETAILS</button>
+                <button class="tmpl-edit">EDIT</button>
+                <button class="tmpl-delete">DELETE</button>
+            </section>
+        </li>
+    </template>
+
+</body>
+</html>

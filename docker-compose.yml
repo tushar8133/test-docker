@@ -1,0 +1,22 @@
+services:
+  node-app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    command: npm run dev
+
+  mongo:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=sanjeev
+      - MONGO_INITDB_ROOT_PASSWORD=mypassword
+    volumes:
+      - mongo-db:/data/db
+    ports:
+      - "27017:27017"
+
+
+volumes:
+  mongo-db:

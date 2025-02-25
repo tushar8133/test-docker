@@ -1,0 +1,28 @@
+{
+  "name": "test-docker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker-build": "docker build -t ibooks .",
+    "docker-run": "docker run --rm -d --env-file ./.env -p 3000:3000 --name cbooks ibooks",
+    "docker-exec": "docker exec -it cbooks sh",
+    "docker-logs": "docker logs cbooks -f",
+    "docker-remove": "docker rm -f cbooks",
+    "docker-compose-up": "docker compose up -d --build",
+    "docker-compose-down": "docker compose down -v",
+    "logs-node-1": "docker logs test-docker-node-app-1 -f",
+    "logs-mongo-1": "docker logs mongo -f"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.10.1"
+  }
+}

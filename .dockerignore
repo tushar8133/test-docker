@@ -1,0 +1,12 @@
+Dockerfile
+docker-compose*yml
+.dockerignore
+.git
+.gitignore
+node_modules
+npm-debug.log
+.npmrc
+.env
+.DS_Store
+.Trashes
+thumbs.db
