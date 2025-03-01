@@ -27,11 +27,63 @@ const DynamicModel = mongoose.model(
   "books"
 );
 
+let sessionDetails = [];
+let usersCount = 0;
+
+function cookieParser(req, res, next) {
+
+  if (req.url === "/login") {
+    return next();
+  }
+  
+  if (!req.headers.cookie) {
+    console.log('INVALID COOKIE');
+    res.status(404).end("Invalid Cookie");
+    return;
+  }
+
+  const [cookName, cookValue] = req.headers?.cookie?.split("=");
+  
+  if (cookName === "user" && sessionDetails.includes(Number(cookValue))) {
+    console.log("existing user", cookValue);
+    res.cookie("user", cookValue, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 10000,
+    });
+    return next();
+  }
+  
+};
+
 const app = express();
+
+app.use(cookieParser);
 
 app.use(express.json());
 
 app.use("/", express.static("public"));
+
+// POST endpoint to create a dynamic document
+app.get("/login", async (req, res) => {
+  try {
+    if (!req.headers.cookie) {
+      sessionId = ++usersCount;
+      sessionDetails.push(sessionId);
+      res.cookie("user", sessionId, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 10000,
+      });
+      console.log("new user", sessionId);
+    }
+    res.status(201).json("Login Successful!");
+  } catch (error) {
+    res.status(500).json({ error: "Invalid Login" });
+  }
+});
 
 // POST endpoint to create a dynamic document
 app.post("/book", async (req, res) => {

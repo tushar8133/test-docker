@@ -154,6 +154,15 @@
                 listBooks()
             })
         }
+
+        function login(e) {
+            fetch(`/login`, {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            }).then(() => {
+                console.log("user loggged in")
+            })
+        }
         
         listBooks()
 
@@ -222,6 +231,14 @@
 </head>
 <body>
     
+    <fieldset>
+        <legend>Login</legend>
+        <form name="loginForm" onsubmit="event.preventDefault(); login(this);">
+            <label><span>Username</span><input type="text" name="username" /></label>
+            <label><span>Password</span><input type="text" name="password" type="password" /></label>
+            <div><input type="submit" name="submit" value="Login" /></div>
+        </form>
+    </fieldset>
     
     <fieldset>
         <legend>Add Details</legend>

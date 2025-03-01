@@ -15,7 +15,9 @@
     "docker-compose-up": "docker compose up -d --build",
     "docker-compose-down": "docker compose down -v",
     "logs-node-1": "docker logs test-docker-node-app-1 -f",
-    "logs-mongo-1": "docker logs mongo -f"
+    "logs-mongo-1": "docker logs mongo -f",
+    "mongod": "cd ~/Setups/mongo && mongod -f mongod.conf",
+    "mongosh": "cd ~/Setups/mongo && mongosh -u sanjeev -p mypassword"
   },
   "keywords": [],
   "author": "",
