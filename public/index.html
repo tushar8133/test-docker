@@ -76,11 +76,53 @@
             text-align: center;
             align-content: center;
         }
+        fieldset:has(form[name=loginForm]) {
+            width: min-content;
+        }
+        [name=loginForm] {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            justify-self: center;
+
+            & label {
+                display: contents;
+                & span {
+                    justify-self: end;
+                    &::after {
+                        content: ":";
+                    }
+                }
+            }
+
+            > div:has(> input[type=submit]) {
+                grid-column: 1 / -1;
+                justify-self: center;
+            }
+        }
     </style>
     <script>
+        async function hit(url, options = {}) {
+            const response = await fetch(url, options);
+            
+            if (!response.ok) {
+                const contentType = Object.fromEntries(Array.from(response.headers))?.["content-type"];
+                // const data = contentType?.includes("json") ? await response.json() : await response.text();
+                const data = await response.clone().text();
+                const msg = `${response.status} ${response.statusText} | ${data}`
+                console.log(">>", msg);
+                message.innerHTML = msg;
+                return false;
+            }
+            
+            message.innerHTML = "";
+            return response;
+
+        }
+
 
         function listBooks(e) {
-            fetch("/books", {
+            hit("/books", {
                 method: "GET",
                 headers: {"Content-Type": "application/json"}
             })
@@ -103,7 +145,7 @@
         function addBook(e) {
             const data = getFormData(e);
             delete data._id;
-            fetch("/book", {
+            hit("/book", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(data)
@@ -112,12 +154,12 @@
                 e.reset();
             })
         }
-        
+
         function updateBook(e) {
             const data = getFormData(e);
             const id = data._id;
             delete data._id;
-            fetch(`/book/${id}`, {
+            hit(`/book/${id}`, {
                 method: "PUT",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(data)
@@ -128,7 +170,7 @@
         }
 
         function bookDetails(id) {
-            fetch(`/book/${id}`, {
+            hit(`/book/${id}`, {
                 method: "GET",
                 headers: {"Content-Type": "application/json"}
             })
@@ -145,9 +187,9 @@
                 setApperance();
             })
         }
-        
+
         function deleteBook(id) {
-            fetch(`/book/${id}`, {
+            hit(`/book/${id}`, {
                 method: "DELETE",
                 headers: {"Content-Type": "application/json"}
             }).then(() => {
@@ -155,16 +197,26 @@
             })
         }
 
-        function login(e) {
-            fetch(`/login`, {
+        function loginHandler(e) {
+            const data = getFormData(e);
+            hit(`/authenticate`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }).then(() => {
+                listBooks();
+            })
+        }
+
+        function logoutHandler() {
+            hit(`/logout`, {
                 method: "GET",
                 headers: {"Content-Type": "application/json"}
             }).then(() => {
-                console.log("user loggged in")
+                console.log("user loggged out")
             })
         }
-        
-        listBooks()
+
 
         function revertBook() {
             const fs = document.querySelector("fieldset:has(form[name=addBookForm])");
@@ -219,7 +271,7 @@
                 fs.querySelector(".floating-close").style.display = "block";
             }
         }
-        
+
         function getFormData(form) {
             const fData = new FormData(form);
             const fromEntries1 = Array.from(fData);
@@ -232,18 +284,26 @@
 <body>
     
     <fieldset>
+        <legend>Message</legend>
+        <p id="message"></p>
+    </fieldset>
+
+    <fieldset>
         <legend>Login</legend>
-        <form name="loginForm" onsubmit="event.preventDefault(); login(this);">
+        <form name="loginForm" onsubmit="event.preventDefault(); loginHandler(this);">
             <label><span>Username</span><input type="text" name="username" /></label>
-            <label><span>Password</span><input type="text" name="password" type="password" /></label>
-            <div><input type="submit" name="submit" value="Login" /></div>
+            <label><span>Password</span><input type="password" name="password" /></label>
+            <div>
+                <input type="submit" name="submit" value="Login" />
+                <button name="logout" onclick="event.preventDefault(); logoutHandler();">Logout</button>
+            </div>
         </form>
     </fieldset>
     
     <fieldset>
         <legend>Add Details</legend>
         <div class="floating-close" onclick="revertBook()">&cross;</div>
-        <form name="addBookForm" data-mode="add" onsubmit="event.preventDefault(); handleBookSection(this);">
+        <form name="addBookForm" data-mode="add" onsubmit="event.preventDefault(); handleBookSection(this);" autocomplete="off">
             <label><span>Title</span><input type="text" name="title" /></label>
             <label><span>Author</span><input type="text" name="author" /></label>
             <label><span>Extra</span><input type="text" name="extra" /></label>
